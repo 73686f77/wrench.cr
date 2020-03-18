@@ -1,7 +1,7 @@
 struct Number
   SIZE_PREFIXES = {
-    {"Bytes", "KiloBytes", "MegaBytes", "GigaBytes", "TeraBytes", "PetaBytes", "ExaBytes", "ZettaBytes", "YottaBytes"},
-    {"Bytes", "KiloBytes", "MegaBytes", "GigaBytes", "TeraBytes", "PetaBytes", "ExaBytes", "ZettaBytes", "YottaBytes"},
+    {" Bytes", " KiloBytes", " MegaBytes", " GigaBytes", " TeraBytes", " PetaBytes", " ExaBytes", " ZettaBytes", " YottaBytes"},
+    {" Bytes", " KiloBytes", " MegaBytes", " GigaBytes", " TeraBytes", " PetaBytes", " ExaBytes", " ZettaBytes", " YottaBytes"},
   }
 
   TIME_PREFIXES = { {"ns", "µs", "ms", "s", "s", "s", "s"}, {"ns", "µs", "ms", "s", "s", "s", "s"} }
