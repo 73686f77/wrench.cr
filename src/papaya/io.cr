@@ -1,5 +1,9 @@
 abstract class IO
-  class CopyCauseException < Exception
+  class CopyException < Exception
+    property count : UInt64?
+
+    def initialize(@message : String? = nil, @cause : Exception? = nil, @count : UInt64? = nil)
+    end
   end
 
   def self.copy(src, dst, cause : Bool) : UInt64
@@ -15,7 +19,7 @@ abstract class IO
         count += len
       end
     rescue ex
-      CopyCauseException.new count.to_s, cause: ex
+      CopyException.new message: String.new, cause: ex, count: count
     end
 
     count
