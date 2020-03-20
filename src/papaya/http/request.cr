@@ -45,10 +45,10 @@ class HTTP::Request
   def self.parse_string_port(text : String)
     return unless port = text.to_i?
 
-    port if port < 65536_i32
+    port if port <= 65535_i32
   end
 
-  def self.get_port_from_text(text : String)
+  def self.get_port_from_text(text : String) : Int32?
     uri = URI.parse text
 
     # Try - No.1
@@ -70,7 +70,10 @@ class HTTP::Request
 
     # Finally
     scheme = uri.scheme || String.new
-    "https" == scheme.downcase ? 443_i32 : 80_i32
+    return 443_i32 if "https" == scheme.downcase
+    return 80_i32 if "http" == scheme.downcase
+
+    nil
   end
 
   def self.get_host_from_text(text : String)
@@ -106,6 +109,10 @@ class HTTP::Request
     return unless address = @headers["Host"]?
 
     Request.get_port_from_text address
+  end
+
+  def regular_port
+    header_port || connect_port
   end
 
   def body=(@body : Nil)
