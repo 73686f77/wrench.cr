@@ -1,9 +1,11 @@
 require "http"
 require "socket"
 require "uri"
+require "time"
 
 require "./http/*"
 require "./io/*"
 require "./openssl/*"
 require "./stream/*"
+require "./time/*"
 require "./uri/*"
