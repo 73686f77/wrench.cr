@@ -1,5 +1,5 @@
 module Stream
-  def self.chunk(io : IO, buffer_size : Int32 = 131072_i32, sync_close : Bool = false, &block : IO::Memory, Float64, Bool, Exception? ->)
+  def self.chunk(io : IO, buffer_size : Int32 = 131072_i32, sync_close : Bool = false, &block : IO::Memory, Float64, Bool, Bool ->)
     buffer = IO::Memory.new buffer_size
     finished = false
     _chunk_size = 0_i32 ensure stream_size = 0_f64
@@ -15,7 +15,7 @@ module Stream
         stream_size += length
       rescue exception
         buffer.rewind
-        call = yield buffer, stream_size, true, exception
+        call = yield buffer, stream_size, true, true
 
         length = 0_i32
         finished = true
@@ -26,13 +26,13 @@ module Stream
       case {_chunk_size, length}
       when {buffer_size, length}
         buffer.rewind
-        call = yield buffer, stream_size, false, nil
+        call = yield buffer, stream_size, false, false
 
         buffer.clear
         _chunk_size = 0_i32
       when {_chunk_size, 0_i32}
         buffer.rewind
-        call = yield buffer, stream_size, true, nil
+        call = yield buffer, stream_size, true, false
 
         finished = true
       end

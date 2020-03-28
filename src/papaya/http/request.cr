@@ -134,4 +134,33 @@ class HTTP::Request
   def content_length
     @headers["Content-Length"].to_i64? || 0_i64
   end
+
+  def encoding? : Bool
+    return false unless _compress_type = compress_type
+    return false if _compress_type.identity?
+
+    true
+  end
+
+  def compress_type : HTTP::CompressType?
+    return unless encoding = @headers["Accept-Encoding"]?
+
+    split = encoding.split ", "
+    return unless first = split.first?
+
+    HTTP::CompressType.parse? first
+  end
+
+  def to_io(io, without_body : Bool)
+    io << @method << ' ' << resource << ' ' << @version << "\r\n"
+    cookies = @cookies
+    headers = cookies ? cookies.add_request_headers(@headers) : @headers
+    return if without_body
+
+    HTTP.serialize_headers_and_body io, headers, nil, @body, @version
+  end
+
+  def serialize_headers_and_body(io)
+    HTTP.serialize_headers_and_body io, headers, nil, @body, @version
+  end
 end

@@ -9,7 +9,7 @@ class HTTP::WebSocket
       end
 
       case info.opcode
-      when Protocol::Opcode::PING
+      when .ping?
         @current_message.write @buffer[0_i32, info.size]
         if info.final
           message = @current_message.to_s
@@ -19,25 +19,25 @@ class HTTP::WebSocket
           end
           @current_message.clear
         end
-      when Protocol::Opcode::PONG
+      when .pong?
         @current_message.write @buffer[0_i32, info.size]
         if info.final
           @on_pong.try &.call @current_message.to_s
           @current_message.clear
         end
-      when Protocol::Opcode::TEXT
+      when .text?
         @current_message.write @buffer[0_i32, info.size]
         if info.final
           @on_message.try &.call @current_message.to_s
           @current_message.clear
         end
-      when Protocol::Opcode::BINARY
+      when .binary?
         @current_message.write @buffer[0_i32, info.size]
         if info.final
           @on_binary.try &.call @current_message.to_slice
           @current_message.clear
         end
-      when Protocol::Opcode::CLOSE
+      when .close?
         @current_message.write @buffer[0_i32, info.size]
         if info.final
           message = @current_message.to_s
@@ -105,11 +105,13 @@ class HTTP::WebSocket
       handshake.to_io socket
       socket.flush
       handshake_response = HTTP::Client::Response.from_io socket
+
       unless handshake_response.status.switching_protocols?
         raise Socket::Error.new "Handshake got denied. Status code was #{handshake_response.status.code}."
       end
 
       challenge_response = Protocol.key_challenge random_key
+
       unless handshake_response.headers["Sec-WebSocket-Accept"]? == challenge_response
         raise Socket::Error.new "Handshake got denied. Server did not verify WebSocket challenge."
       end
