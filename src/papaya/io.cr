@@ -19,7 +19,7 @@ abstract class IO
         count += len
       end
     rescue ex
-      CopyException.new message: String.new, cause: ex, count: count
+      raise CopyException.new message: String.new, cause: ex, count: count
     end
 
     count

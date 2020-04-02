@@ -39,13 +39,13 @@ module Elapsed
   def self.flag_to_text(flag : Flag) : String?
     case flag
     when .weeks?
-      "w"
+      "weeks"
     when .days?
-      "d"
+      "days"
     when .hours?
-      "h"
+      "hours"
     when .minutes?
-      "m"
+      "min"
     when .seconds?
       "s"
     when .milli_seconds?
@@ -59,10 +59,6 @@ module Elapsed
 
   def self.to_text(elapsed : Time::Span, round : Int32 = 2_i32) : String
     return String.new unless tuple = to_tuple elapsed
-
-    String.build do |io|
-      io << tuple.first.round round
-      io << Elapsed.flag_to_text tuple.last
-    end
+    String.build { |io| io << tuple.first.round(round) << flag_to_text tuple.last }
   end
 end
