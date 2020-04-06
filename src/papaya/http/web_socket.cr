@@ -3,51 +3,68 @@ class HTTP::WebSocket
     loop do
       begin
         info = @ws.receive @buffer
-      rescue IO::EOFError
-        @on_close.try &.call String.new
+      rescue
+        @on_close.try &.call CloseCode::AbnormalClosure, String.new
+        @closed = true
+
         break
       end
 
       case info.opcode
       when .ping?
         @current_message.write @buffer[0_i32, info.size]
+
         if info.final
           message = @current_message.to_s
           @on_ping.try &.call message
-          if auto_process
-            pong message unless closed?
-          end
+          pong message unless closed? if auto_process
           @current_message.clear
         end
       when .pong?
         @current_message.write @buffer[0_i32, info.size]
+
         if info.final
           @on_pong.try &.call @current_message.to_s
           @current_message.clear
         end
       when .text?
         @current_message.write @buffer[0_i32, info.size]
+
         if info.final
           @on_message.try &.call @current_message.to_s
           @current_message.clear
         end
       when .binary?
         @current_message.write @buffer[0_i32, info.size]
+
         if info.final
           @on_binary.try &.call @current_message.to_slice
           @current_message.clear
         end
       when .close?
         @current_message.write @buffer[0_i32, info.size]
+
         if info.final
-          message = @current_message.to_s
-          @on_close.try &.call message
-          if auto_process
-            close message unless closed?
+          @current_message.rewind
+
+          if @current_message.size >= 2_i32
+            code = @current_message.read_bytes(UInt16, IO::ByteFormat::NetworkEndian).to_i
+            code = CloseCode.new code
+          else
+            code = CloseCode::NoStatusReceived
           end
+
+          message = @current_message.gets_to_end
+
+          @on_close.try &.call code, message
+          close code unless closed? if auto_process
+
           @current_message.clear
+
           break
         end
+      when Protocol::Opcode::CONTINUATION
+        # TODO: (asterite) I think this is good, but this case wasn't originally handled
       end
     end
   end

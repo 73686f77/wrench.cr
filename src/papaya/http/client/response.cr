@@ -1,5 +1,5 @@
 class HTTP::Client::Response
-  def keep_alive=(value : Bool)
+  def header_keep_alive=(value : Bool)
     return unless value
 
     @headers["Connection"] = "keep-alive"

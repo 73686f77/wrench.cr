@@ -42,7 +42,7 @@ class HTTP::Request
     method == "CONNECT"
   end
 
-  def self.parse_string_port(text : String)
+  def self.parse_port(text : String)
     return unless port = text.to_i?
 
     port if port <= 65535_i32
@@ -55,17 +55,17 @@ class HTTP::Request
     return uri.port if uri.port
 
     # Try - No.2
-    port = parse_string_port uri.path
+    port = parse_port uri.path
     return port if port
 
     # Try - No.3
     host_port = text.rpartition ":"
-    port = parse_string_port host_port.last
+    port = parse_port host_port.last
     return port if port
 
     # Try - No.4
     host_port = uri.path.rpartition ":"
-    port = parse_string_port host_port.last
+    port = parse_port host_port.last
     return port if port
 
     # Finally
@@ -121,7 +121,7 @@ class HTTP::Request
     @headers["Content-Length"] = "0" if @method == "POST" || @method == "PUT"
   end
 
-  def keep_alive=(value : Bool)
+  def header_keep_alive=(value : Bool)
     return unless value
 
     @headers["Connection"] = "keep-alive"
