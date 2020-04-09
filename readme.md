@@ -1,18 +1,18 @@
 <div align = "center"><img src="images/icon.png" width="256" height="256" /></div>
 
 <div align = "center">
-  <h1>Papaya.cr - Fruit Utils Repository</h1>
+  <h1>Wrench.cr - Fruit Utils Repository</h1>
 </div>
 
 <p align="center">
   <a href="https://crystal-lang.org">
     <img src="https://img.shields.io/badge/built%20with-crystal-000000.svg" /></a>
-  <a href="https://travis-ci.org/64726f70/papaya.cr">
-    <img src="https://api.travis-ci.org/64726f70/papaya.cr.svg" /></a>
-  <a href="https://github.com/64726f70/papaya.cr/releases">
-    <img src="https://img.shields.io/github/release/64726f70/papaya.cr.svg" /></a>
-  <a href="https://github.com/64726f70/papaya.cr/blob/master/license">
-    <img src="https://img.shields.io/github/license/64726f70/papaya.cr.svg"></a>
+  <a href="https://travis-ci.org/64726f70/wrench.cr">
+    <img src="https://api.travis-ci.org/64726f70/wrench.cr.svg" /></a>
+  <a href="https://github.com/64726f70/wrench.cr/releases">
+    <img src="https://img.shields.io/github/release/64726f70/wrench.cr.svg" /></a>
+  <a href="https://github.com/64726f70/wrench.cr/blob/master/license">
+    <img src="https://img.shields.io/github/license/64726f70/wrench.cr.svg"></a>
 </p>
 
 ## Description
@@ -44,14 +44,14 @@
 Add this to your application's shard.yml:
 ```yaml
 dependencies:
-  papaya:
-    github: 64726f70/papaya.cr
+  wrench:
+    github: 64726f70/wrench.cr
 ```
 
 ### Installation
 
 ```bash
-$ git clone https://github.com/64726f70/papaya.cr.git
+$ git clone https://github.com/64726f70/wrench.cr.git
 ```
 
 ## Development
