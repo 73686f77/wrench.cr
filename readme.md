@@ -1,7 +1,7 @@
 <div align = "center"><img src="images/icon.png" width="256" height="256" /></div>
 
 <div align = "center">
-  <h1>Wrench.cr - Fruit Utils Repository</h1>
+  <h1>Wrench.cr - Patch Utilities Repository</h1>
 </div>
 
 <p align="center">
