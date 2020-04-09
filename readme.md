@@ -7,12 +7,12 @@
 <p align="center">
   <a href="https://crystal-lang.org">
     <img src="https://img.shields.io/badge/built%20with-crystal-000000.svg" /></a>
-  <a href="https://travis-ci.org/64726f70/wrench.cr">
-    <img src="https://api.travis-ci.org/64726f70/wrench.cr.svg" /></a>
-  <a href="https://github.com/64726f70/wrench.cr/releases">
-    <img src="https://img.shields.io/github/release/64726f70/wrench.cr.svg" /></a>
-  <a href="https://github.com/64726f70/wrench.cr/blob/master/license">
-    <img src="https://img.shields.io/github/license/64726f70/wrench.cr.svg"></a>
+  <a href="https://travis-ci.org/73686f77/wrench.cr">
+    <img src="https://api.travis-ci.org/73686f77/wrench.cr.svg" /></a>
+  <a href="https://github.com/73686f77/wrench.cr/releases">
+    <img src="https://img.shields.io/github/release/73686f77/wrench.cr.svg" /></a>
+  <a href="https://github.com/73686f77/wrench.cr/blob/master/license">
+    <img src="https://img.shields.io/github/license/73686f77/wrench.cr.svg"></a>
 </p>
 
 ## Description
@@ -45,13 +45,13 @@ Add this to your application's shard.yml:
 ```yaml
 dependencies:
   wrench:
-    github: 64726f70/wrench.cr
+    github: 73686f77/wrench.cr
 ```
 
 ### Installation
 
 ```bash
-$ git clone https://github.com/64726f70/wrench.cr.git
+$ git clone https://github.com/73686f77/wrench.cr.git
 ```
 
 ## Development
@@ -72,7 +72,7 @@ $ make test
 
 |Name|Creator|Maintainer|Contributor|
 |:---:|:---:|:---:|:---:|
-|**[64726f70](https://github.com/64726f70)**|√|√||
+|**[73686f77](https://github.com/73686f77)**|√|√||
 
 ## License
 
