@@ -6,10 +6,12 @@ abstract class IO
     end
   end
 
+  # Warning: Inaccurate CopyException count. (Maybe)
+
   def self.copy(src, dst, cause : Bool) : UInt64
     return copy src, dst unless cause
 
-    buffer = uninitialized UInt8[4096_i32]
+    buffer = uninitialized UInt8[16384_i32]
     count = 0_u64
 
     begin
