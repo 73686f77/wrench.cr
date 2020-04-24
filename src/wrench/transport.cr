@@ -35,7 +35,7 @@ class Transport
   end
 
   def alive_interval
-    @aliveInterval || 3_i32.minutes
+    @aliveInterval || 1_i32.minutes
   end
 
   def perform
@@ -59,6 +59,8 @@ class Transport
         break if (Time.local - _last_alive) > alive_interval
         break if exception.nil?
         break unless exception.is_a? IO::TimeoutError
+
+        sleep 0.05_f32.seconds
       end
 
       self.uploaded_size = count || 0_u64
@@ -82,6 +84,8 @@ class Transport
         break if (Time.local - _last_alive) > alive_interval
         break if exception.nil?
         break unless exception.is_a? IO::TimeoutError
+
+        sleep 0.05_f32.seconds
       end
 
       self.received_size = count || 0_u64
