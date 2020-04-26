@@ -1,5 +1,9 @@
 name: wrench
-version: 0.1.1
+version: 0.1.2
+
+dependencies:
+  durian:
+    github: 636f7374/durian.cr
 
 authors:
   - 73686f77

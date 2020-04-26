@@ -6,8 +6,6 @@ abstract class IO
     end
   end
 
-  # Warning: Inaccurate CopyException count. (Maybe)
-
   def self.super_copy(src : IO, dst : IO, &block : ->) : UInt64
     buffer = uninitialized UInt8[4096_i32]
     count = 0_u64

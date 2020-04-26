@@ -38,6 +38,14 @@ class Transport
     @aliveInterval || 1_i32.minutes
   end
 
+  def remote_tls=(value : OpenSSL::SSL::Socket::Client)
+    @remoteTls = value
+  end
+
+  def remote_tls
+    @remoteTls
+  end
+
   def perform
     self.last_alive = Time.local
 
@@ -100,6 +108,8 @@ class Transport
 
         sleep 1_i32.seconds
       end
+    ensure
+      remote_tls.try &.free
     end
 
     spawn do
