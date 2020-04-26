@@ -1,3 +1,1 @@
-require "durian"
-
 require "./wrench/*"
