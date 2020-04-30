@@ -19,7 +19,6 @@
 
 * This repository contains some useful monkey patches.
   * But I don't recommend it to others, It will add or remove some features at any time.
-* [Cherry.cr](https://github.com/636f7374/cherry.cr) needs to be used with this repository.
 
 ## Features
 
