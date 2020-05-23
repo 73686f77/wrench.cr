@@ -78,7 +78,6 @@ class Transport
   end
 
   def perform
-    channel = Channel(Bool).new
     self.last_alive = Time.local
 
     spawn do
