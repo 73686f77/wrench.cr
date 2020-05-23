@@ -2,8 +2,10 @@ class Transport
   getter client : IO
   getter remote : IO
   getter callback : Proc(UInt64, UInt64, Nil)?
+  getter mutex : Mutex
 
   def initialize(@client, @remote : IO, @callback : Proc(UInt64, UInt64, Nil)? = nil)
+    @mutex = Mutex.new :unchecked
   end
 
   private def uploaded_size=(value : UInt64)
@@ -38,6 +40,14 @@ class Transport
     @aliveInterval || 1_i32.minutes
   end
 
+  def extra_uploaded_size=(value : Int32)
+    @extraUploadedSize = value
+  end
+
+  def extra_uploaded_size
+    @extraUploadedSize || 0_i32
+  end
+
   def remote_tls=(value : OpenSSL::SSL::Socket::Client)
     @remoteTls = value
   end
@@ -54,7 +64,21 @@ class Transport
     @clientTls
   end
 
+  def cleanup
+    @mutex.synchronize do
+      return if client.closed? && remote.closed?
+
+      client.close rescue nil
+      remote.close rescue nil
+      client_tls.try &.free
+      remote_tls.try &.free
+
+      sleep 0.05_f32
+    end
+  end
+
   def perform
+    channel = Channel(Bool).new
     self.last_alive = Time.local
 
     spawn do
@@ -79,7 +103,7 @@ class Transport
         sleep 0.05_f32.seconds
       end
 
-      self.uploaded_size = count || 0_u64
+      self.uploaded_size = (count || 0_u64) + extra_uploaded_size
     end
 
     spawn do
@@ -109,16 +133,10 @@ class Transport
 
     spawn do
       loop do
-        if uploaded_size || received_size
-          client.close rescue nil
-          break remote.close rescue nil
-        end
+        break cleanup if uploaded_size || received_size
 
         sleep 1_i32.seconds
       end
-    ensure
-      client_tls.try &.free
-      remote_tls.try &.free
     end
 
     spawn do
