@@ -22,25 +22,18 @@
 
 ## Features
 
-* HTTP (Client, Common, Request, WebSocket)
-  * Client: When encountering HTTP 100 Continue, it will intelligently handle.
-  * WebSocket: It can control whether to enable automatic sending (Pong, Close) packets.
-* IO (Evented, IO)
-  * Evented: It can control HTTP::Server client write / read timeout.
-* OpenSSL (SSL)
-  * Server: It can control HTTP::Server client write / read timeout.
-* Stream (Stream.chunk, Through)
-  * All: Chunk stream Buffer, `IO.pipe`, ...
-* URI
-  * URI: Quickly detect if scheme is http / https.
+* ...
 
 ## Tips
 
 * I don't recommend it to others, It will add or remove some features at any time.
 
+## Usage
+
 ### Used as Shard
 
 Add this to your application's shard.yml:
+
 ```yaml
 dependencies:
   wrench:
@@ -61,7 +54,7 @@ $ make test
 
 ## References
 
-* ...
+* [ISO Country Code to Unicode Flag in C#](https://alanedwardes.com/blog/posts/country-code-to-flag-emoji-csharp/)
 
 ## Credit
 
