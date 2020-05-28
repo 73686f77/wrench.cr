@@ -1,8 +1,8 @@
 module Stream
-  def self.chunk(io : IO, buffer_size : Int32 = 131072_i32, sync_close : Bool = false, &block : IO::Memory, Float64, Bool, Bool ->)
+  def self.chunk(io : IO, buffer_size : Int32 = 131072_i32, sync_close : Bool = false, &block : IO::Memory, Int64, Bool, Bool ->)
     buffer = IO::Memory.new buffer_size
     finished = false
-    _chunk_size = 0_i32 ensure stream_size = 0_f64
+    _chunk_size = 0_i32 ensure stream_size = 0_i64
 
     finished = true if io.closed?
 

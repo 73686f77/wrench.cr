@@ -1,14 +1,14 @@
 class Transport
   getter client : IO
   getter remote : IO
-  getter callback : Proc(UInt64, UInt64, Nil)?
+  getter callback : Proc(Int64, Int64, Nil)?
   getter mutex : Mutex
 
-  def initialize(@client, @remote : IO, @callback : Proc(UInt64, UInt64, Nil)? = nil)
+  def initialize(@client, @remote : IO, @callback : Proc(Int64, Int64, Nil)? = nil)
     @mutex = Mutex.new :unchecked
   end
 
-  private def uploaded_size=(value : UInt64)
+  private def uploaded_size=(value : Int64)
     @uploadedSize = value
   end
 
@@ -16,7 +16,7 @@ class Transport
     @uploadedSize
   end
 
-  private def received_size=(value : UInt64)
+  private def received_size=(value : Int64)
     @receivedSize = value
   end
 
@@ -40,7 +40,7 @@ class Transport
     @aliveInterval || 1_i32.minutes
   end
 
-  def extra_uploaded_size=(value : Int32)
+  def extra_uploaded_size=(value : Int32 | Int64)
     @extraUploadedSize = value
   end
 
@@ -82,7 +82,7 @@ class Transport
 
     spawn do
       exception = nil
-      count = 0_u64
+      count = 0_i64
 
       loop do
         size = begin
@@ -102,12 +102,12 @@ class Transport
         sleep 0.05_f32.seconds
       end
 
-      self.uploaded_size = (count || 0_u64) + extra_uploaded_size
+      self.uploaded_size = (count || 0_i64) + extra_uploaded_size
     end
 
     spawn do
       exception = nil
-      count = 0_u64
+      count = 0_i64
 
       loop do
         size = begin
@@ -127,7 +127,7 @@ class Transport
         sleep 0.05_f32.seconds
       end
 
-      self.received_size = count || 0_u64
+      self.received_size = count || 0_i64
     end
 
     spawn do

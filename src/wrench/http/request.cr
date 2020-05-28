@@ -1,22 +1,4 @@
 class HTTP::Request
-  property method : String
-  property headers : Headers
-  getter body : IO?
-  property version : String
-  property expect_continue : Bool
-  @cookies : Cookies?
-  @query_params : Params?
-  @uri : URI?
-
-  # The network address that sent the request to an HTTP server.
-  #
-  # `HTTP::Server` will try to fill this property, and its value
-  # will have a format like "IP:port", but this format is not guaranteed.
-  # Middlewares can overwrite this value.
-  #
-  # This property is not used by `HTTP::Client`.
-  property remote_address : String?
-
   def self.new(method : String, resource : String, headers : Headers? = nil, body : String | Bytes | IO | Nil = nil, expect_continue : Bool = false, version = "HTTP/1.1")
     # Duplicate headers to prevent the request from modifying data that the user might hold.
     new method, resource, headers.try(&.dup), body, expect_continue: expect_continue, version: version, internal: nil
@@ -51,24 +33,19 @@ class HTTP::Request
   def self.get_port_from_text(text : String) : Int32?
     uri = URI.parse text
 
-    # Try - No.1
     return uri.port if uri.port
 
-    # Try - No.2
     port = parse_port uri.path
     return port if port
 
-    # Try - No.3
     host_port = text.rpartition ":"
     port = parse_port host_port.last
     return port if port
 
-    # Try - No.4
     host_port = uri.path.rpartition ":"
     port = parse_port host_port.last
     return port if port
 
-    # Finally
     scheme = uri.scheme || String.new
     return 443_i32 if "https" == scheme.downcase
     return 80_i32 if "http" == scheme.downcase

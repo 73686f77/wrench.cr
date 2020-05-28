@@ -29,7 +29,7 @@ class HTTP::Server
     server.local_address
   end
 
-  {% unless flag?(:without_openssl) %}
+  {% unless flag? :without_openssl %}
     def bind_tls(host : String, port : Int32, context : OpenSSL::SSL::Context::Server,
                  write_timeout : Int32? = nil, read_timeout : Int32? = nil, reuse_port : Bool = false) : Socket::IPAddress
       tcp_server = TCPServer.new host, port, reuse_port: reuse_port

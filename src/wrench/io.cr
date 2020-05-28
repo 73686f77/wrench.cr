@@ -1,19 +1,19 @@
 abstract class IO
   class CopyException < Exception
-    property count : UInt64?
+    property count : Int64?
 
-    def initialize(@message : String? = nil, @cause : Exception? = nil, @count : UInt64? = nil)
+    def initialize(@message : String? = nil, @cause : Exception? = nil, @count : Int64? = nil)
     end
   end
 
-  def self.super_copy(src : IO, dst : IO, &block : ->) : UInt64
+  def self.super_copy(src : IO, dst : IO, &block : ->) : Int64
     buffer = uninitialized UInt8[4096_i32]
-    count = 0_u64
+    count = 0_i64
 
     begin
       while (len = src.read(buffer.to_slice).to_i32) > 0_i32
         dst.write buffer.to_slice[0_i32, len]
-        count += len
+        count &+= len
 
         yield
       end
