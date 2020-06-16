@@ -7,8 +7,8 @@ class Log
     new backend: IOBackend.new io, without_progname
   end
 
-  {% for method, severity in {debug: Severity::Debug, verbose: Severity::Verbose,
-                              info: Severity::Info, warn: Severity::Warning,
+  {% for method, severity in {debug: Severity::Debug, trace: Severity::Trace,
+                              info: Severity::Info, warn: Severity::Warn, notice: Severity::Notice,
                               error: Severity::Error, fatal: Severity::Fatal} %}
 
     # Logs a message if the logger's current severity is lower or equal to `{{severity}}`.
