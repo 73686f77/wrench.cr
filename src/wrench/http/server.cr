@@ -36,6 +36,7 @@ class HTTP::Server
       read_timeout.try { |_read_timeout| tcp_server.client_read_timeout = _read_timeout }
       write_timeout.try { |_write_timeout| tcp_server.client_write_timeout = _write_timeout }
       server = OpenSSL::SSL::Server.new tcp_server, context
+      server.start_immediately = false
 
       begin
         bind server
@@ -99,7 +100,20 @@ class HTTP::Server
 
   private def handle_client(server, client : IO)
     set_socket_timeout server, client
-    client.sync = false if client.is_a? IO::Buffered
+    client.sync = false if io.is_a? IO::Buffered
+
+    {% unless flag? :without_openssl %}
+      if io.is_a? OpenSSL::SSL::Socket::Server
+        begin
+          io.accept
+        rescue ex
+          Log.debug(exception: ex) { "Error during SSL handshake" }
+          handle_exception ex
+
+          return
+        end
+      end
+    {% end %}
 
     begin
       @processor.process client, client
@@ -107,6 +121,7 @@ class HTTP::Server
       exception = ex
     end
 
+    client.close rescue nil
     handle_exception exception if exception
   end
 end

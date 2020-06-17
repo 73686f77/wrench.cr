@@ -1,6 +1,7 @@
 class HTTP::Request
   def self.new(method : String, resource : String, headers : Headers? = nil, body : String | Bytes | IO | Nil = nil, expect_continue : Bool = false, version = "HTTP/1.1")
     # Duplicate headers to prevent the request from modifying data that the user might hold.
+
     new method, resource, headers.try(&.dup), body, expect_continue: expect_continue, version: version, internal: nil
   end
 
@@ -11,6 +12,7 @@ class HTTP::Request
 
   def self.new(method : String, resource : String, headers : Headers? = nil, body : String | Bytes | IO | Nil = nil, version = "HTTP/1.1")
     # Duplicate headers to prevent the request from modifying data that the user might hold.
+
     new method, resource, headers.try(&.dup), body, expect_continue: false, version: version, internal: nil
   end
 

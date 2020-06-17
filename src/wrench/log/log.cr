@@ -3,20 +3,29 @@ class Log
     @initial_level = level
   end
 
-  def self.new(io : IO, without_progname : Bool? = false)
-    new backend: IOBackend.new io, without_progname
+  def self.new(io : IO)
+    new backend: IOBackend.new io
   end
 
-  {% for method, severity in {debug: Severity::Debug, trace: Severity::Trace,
-                              info: Severity::Info, warn: Severity::Warn, notice: Severity::Notice,
-                              error: Severity::Error, fatal: Severity::Fatal} %}
-
+  {% for method, severity in {trace: Severity::Trace, debug: Severity::Debug,
+                              info: Severity::Info, notice: Severity::Notice,
+                              warn: Severity::Warn, error: Severity::Error,
+                              fatal: Severity::Fatal} %}
     # Logs a message if the logger's current severity is lower or equal to `{{severity}}`.
-    def {{method.id}}(message : String, exception : Exception? = nil)
+
+    def {{method.id}}(result : String | Entry, exception : Exception? = nil)
       return unless backend = @backend
       severity = Severity.new {{severity}}
       return unless level <= severity
-      entry = Entry.new @source, severity, message, exception
+
+      entry = case result
+        when Entry
+          result
+        else
+          dsl = Emitter.new @source, severity, exception
+          dsl.emit result.to_s
+        end
+
       backend.write entry
     end
   {% end %}
