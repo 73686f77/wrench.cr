@@ -100,12 +100,12 @@ class HTTP::Server
 
   private def handle_client(server, client : IO)
     set_socket_timeout server, client
-    client.sync = false if io.is_a? IO::Buffered
+    client.sync = false if client.is_a? IO::Buffered
 
     {% unless flag? :without_openssl %}
-      if io.is_a? OpenSSL::SSL::Socket::Server
+      if client.is_a? OpenSSL::SSL::Socket::Server
         begin
-          io.accept
+          client.accept
         rescue ex
           Log.debug(exception: ex) { "Error during SSL handshake" }
           handle_exception ex
