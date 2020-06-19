@@ -3,10 +3,6 @@ class Log
     @initial_level = level
   end
 
-  def self.new(io : IO)
-    new backend: IOBackend.new io
-  end
-
   {% for method, severity in {trace: Severity::Trace, debug: Severity::Debug,
                               info: Severity::Info, notice: Severity::Notice,
                               warn: Severity::Warn, error: Severity::Error,
