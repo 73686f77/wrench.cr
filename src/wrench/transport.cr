@@ -48,37 +48,27 @@ class Transport
     @extraUploadedSize || 0_i32
   end
 
-  def remote_tls=(value : OpenSSL::SSL::Socket::Client)
-    @remoteTls = value
+  def extra_received_size=(value : Int32 | Int64)
+    @extraReceivedSize = value
   end
 
-  def remote_tls
-    @remoteTls
-  end
-
-  def client_tls=(value : OpenSSL::SSL::Socket::Server)
-    @clientTls = value
-  end
-
-  def client_tls
-    @clientTls
+  def extra_received_size
+    @extraReceivedSize || 0_i32
   end
 
   def cleanup
-    @mutex.synchronize do
-      return if client.closed? && remote.closed?
+    return if client.closed? && remote.closed?
 
-      client.close rescue nil
-      remote.close rescue nil
-      client_tls.try &.free
-      remote_tls.try &.free
+    client.close rescue nil
+    remote.close rescue nil
+  end
 
-      sleep 0.05_f32
-    end
+  def update_last_alive
+    @mutex.synchronize { @last_alive = Time.local }
   end
 
   def perform
-    self.last_alive = Time.local
+    update_last_alive
 
     spawn do
       exception = nil
@@ -86,7 +76,7 @@ class Transport
 
       loop do
         size = begin
-          IO.super_copy(client, remote) { self.last_alive = Time.local }
+          IO.super_copy(client, remote) { update_last_alive }
         rescue ex : IO::CopyException
           exception = ex.cause
           ex.count
@@ -111,7 +101,7 @@ class Transport
 
       loop do
         size = begin
-          IO.super_copy(remote, client) { self.last_alive = Time.local }
+          IO.super_copy(remote, client) { update_last_alive }
         rescue ex : IO::CopyException
           exception = ex.cause
           ex.count
@@ -127,7 +117,7 @@ class Transport
         sleep 0.05_f32.seconds
       end
 
-      self.received_size = count || 0_i64
+      self.received_size = (count || 0_i64) + extra_received_size
     end
 
     spawn do
