@@ -2,9 +2,10 @@ class Transport
   getter client : IO
   getter remote : IO
   getter callback : Proc(Int64, Int64, Nil)?
+  getter heartbeat : Proc(Nil)?
   getter mutex : Mutex
 
-  def initialize(@client, @remote : IO, @callback : Proc(Int64, Int64, Nil)? = nil)
+  def initialize(@client, @remote : IO, @callback : Proc(Int64, Int64, Nil)? = nil, @heartbeat : Proc(Nil)? = nil)
     @mutex = Mutex.new :unchecked
   end
 
@@ -118,6 +119,15 @@ class Transport
       end
 
       self.received_size = (count || 0_i64) + extra_received_size
+    end
+
+    spawn do
+      loop do
+        break if uploaded_size || received_size
+
+        heartbeat.try &.call rescue break
+        sleep 10_i32.seconds
+      end
     end
 
     spawn do
