@@ -9,6 +9,14 @@ class Transport
     @mutex = Mutex.new :unchecked
   end
 
+  def heartbeat_interval=(value : Time::Span)
+    @heartbeatInterval = value
+  end
+
+  def heartbeat_interval
+    @heartbeatInterval ||= 10_i32.seconds
+  end
+
   private def uploaded_size=(value : Int64)
     @uploadedSize = value
   end
@@ -122,11 +130,13 @@ class Transport
     end
 
     spawn do
+      next unless _heartbeat = heartbeat
+
       loop do
         break if uploaded_size || received_size
 
-        heartbeat.try &.call rescue break
-        sleep 10_i32.seconds
+        _heartbeat.call rescue break
+        sleep heartbeat_interval.seconds
       end
     end
 
