@@ -73,7 +73,7 @@ class Transport
   end
 
   def update_last_alive
-    @mutex.synchronize { @last_alive = Time.local }
+    @mutex.synchronize { @lastAlive = Time.local }
   end
 
   def perform
@@ -97,8 +97,6 @@ class Transport
         break if (Time.local - _last_alive) > alive_interval
         break if exception.nil?
         break unless exception.is_a? IO::TimeoutError
-
-        sleep 0.05_f32.seconds
       end
 
       self.uploaded_size = (count || 0_i64) + extra_uploaded_size
@@ -122,8 +120,6 @@ class Transport
         break if (Time.local - _last_alive) > alive_interval
         break if exception.nil?
         break unless exception.is_a? IO::TimeoutError
-
-        sleep 0.05_f32.seconds
       end
 
       self.received_size = (count || 0_i64) + extra_received_size
@@ -136,6 +132,7 @@ class Transport
         break if uploaded_size || received_size
 
         _heartbeat.call rescue break
+        update_last_alive
         sleep heartbeat_interval.seconds
       end
     end
