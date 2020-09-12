@@ -132,7 +132,6 @@ class Transport
         break if uploaded_size || received_size
 
         _heartbeat.call rescue break
-        update_last_alive
         sleep heartbeat_interval.seconds
       end
     end
