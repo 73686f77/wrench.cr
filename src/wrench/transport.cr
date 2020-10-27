@@ -68,8 +68,8 @@ class Transport
   def cleanup
     return if client.closed? && remote.closed?
 
-    client.close rescue nil
     remote.close rescue nil
+    client.close rescue nil
   end
 
   def update_last_alive
@@ -89,13 +89,15 @@ class Transport
         rescue ex : IO::CopyException
           exception = ex.cause
           ex.count
+        rescue ex
+          exception = ex
+          0_i64
         end
 
         size.try { |_size| count += _size }
 
         break unless _last_alive = last_alive
         break if (Time.local - _last_alive) > alive_interval
-        break if exception.nil?
         break unless exception.is_a? IO::TimeoutError
 
         sleep 0.05_f32.seconds
@@ -114,13 +116,15 @@ class Transport
         rescue ex : IO::CopyException
           exception = ex.cause
           ex.count
+        rescue ex
+          exception = ex
+          0_i64
         end
 
         size.try { |_size| count += _size }
 
         break unless _last_alive = last_alive
         break if (Time.local - _last_alive) > alive_interval
-        break if exception.nil?
         break unless exception.is_a? IO::TimeoutError
 
         sleep 0.05_f32.seconds
