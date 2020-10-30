@@ -76,12 +76,25 @@ class Transport
     @mutex.synchronize { @lastAlive = Time.local }
   end
 
+  def fuzzy_closed_stream?(exception : Exception?, size : Int64?, cycle_times : Int64) : Bool
+    return true if exception.nil? && (size || 0_i64).zero? && 20_i32 < cycle_times
+
+    is_io_error = exception.is_a? IO::Error
+    is_closed_stream = "Closed stream" == exception.try &.message
+    is_size_zero = (size || 0_i64).zero?
+    is_cycle_zero = 20_i32 < cycle_times
+    return true if is_io_error && is_closed_stream && is_size_zero && is_cycle_zero
+
+    false
+  end
+
   def perform
     update_last_alive
 
     spawn do
       exception = nil
       count = 0_i64
+      cycle_times = 0_i64
 
       loop do
         size = begin
@@ -92,9 +105,11 @@ class Transport
         end
 
         size.try { |_size| count += _size }
+        cycle_times += 1_i64
 
         break unless _last_alive = last_alive
         break if (Time.local - _last_alive) > alive_interval
+        break if fuzzy_closed_stream? exception, size, cycle_times
 
         sleep 0.05_f32.seconds
       end
@@ -105,6 +120,7 @@ class Transport
     spawn do
       exception = nil
       count = 0_i64
+      cycle_times = 0_i64
 
       loop do
         size = begin
@@ -115,9 +131,11 @@ class Transport
         end
 
         size.try { |_size| count += _size }
+        cycle_times += 1_i64
 
         break unless _last_alive = last_alive
         break if (Time.local - _last_alive) > alive_interval
+        break if fuzzy_closed_stream? exception, size, cycle_times
 
         sleep 0.05_f32.seconds
       end
