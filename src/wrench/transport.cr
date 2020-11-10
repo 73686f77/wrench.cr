@@ -9,6 +9,22 @@ class Transport
     @mutex = Mutex.new :unchecked
   end
 
+  def remote_tls=(value : OpenSSL::SSL::Socket::Client)
+    @remoteTls = value
+  end
+
+  def remote_tls
+    @remoteTls
+  end
+
+  def client_tls=(value : OpenSSL::SSL::Socket::Server)
+    @clientTls = value
+  end
+
+  def client_tls
+    @clientTls
+  end
+
   def heartbeat_interval=(value : Time::Span)
     @heartbeatInterval = value
   end
@@ -70,6 +86,9 @@ class Transport
 
     remote.close rescue nil
     client.close rescue nil
+
+    client_tls.try &.free
+    remote_tls.try &.free
   end
 
   def update_last_alive
