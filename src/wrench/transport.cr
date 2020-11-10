@@ -9,6 +9,14 @@ class Transport
     @mutex = Mutex.new :unchecked
   end
 
+  def maximum_closed_cycle_times=(value : Int32)
+    @maximumClosedCycleTimes = value
+  end
+
+  def maximum_closed_cycle_times
+    @maximumClosedCycleTimes || 10_i32
+  end
+
   def remote_tls=(value : OpenSSL::SSL::Socket::Client)
     @remoteTls = value
   end
@@ -96,13 +104,14 @@ class Transport
   end
 
   def fuzzy_closed_stream?(exception : Exception?, size : Int64?, cycle_times : Int64) : Bool
-    return true if exception.nil? && (size || 0_i64).zero? && 20_i32 < cycle_times
+    return true if exception.nil? && (size || 0_i64).zero? && maximum_closed_cycle_times <= cycle_times
 
     is_io_error = exception.is_a? IO::Error
     is_closed_stream = "Closed stream" == exception.try &.message
     is_size_zero = (size || 0_i64).zero?
-    is_cycle_zero = 20_i32 < cycle_times
-    return true if is_io_error && is_closed_stream && is_size_zero && is_cycle_zero
+    is_maximum_cycle_times = maximum_closed_cycle_times <= cycle_times
+
+    return true if is_io_error && is_closed_stream && is_size_zero && is_maximum_cycle_times
 
     false
   end
