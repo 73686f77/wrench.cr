@@ -103,15 +103,25 @@ class Transport
     @mutex.synchronize { @lastAlive = Time.local }
   end
 
+  def fatal_transfer_error?(exception : Exception?) : Bool
+    return false unless exception
+
+    case exception
+    when IO::Error
+      return true if "Closed stream" == exception.message
+      return true if "Error reading socket: Connection reset by peer" == exception.message
+    end
+
+    false
+  end
+
   def fuzzy_closed_stream?(exception : Exception?, size : Int64?, cycle_times : Int64) : Bool
     return true if exception.nil? && (size || 0_i64).zero? && maximum_closed_cycle_times <= cycle_times
 
-    is_io_error = exception.is_a? IO::Error
-    is_closed_stream = "Closed stream" == exception.try &.message
     is_size_zero = (size || 0_i64).zero?
     is_maximum_cycle_times = maximum_closed_cycle_times <= cycle_times
 
-    return true if is_io_error && is_closed_stream && is_size_zero && is_maximum_cycle_times
+    return true if fatal_transfer_error?(exception) && is_size_zero && is_maximum_cycle_times
 
     false
   end
