@@ -1,4 +1,9 @@
 class Transport
+  enum Side : UInt8
+    Client = 0_u8
+    Remote = 1_u8
+  end
+
   getter client : IO
   getter remote : IO
   getter callback : Proc(Int64, Int64, Nil)?
@@ -89,6 +94,14 @@ class Transport
     @extraReceivedSize || 0_i32
   end
 
+  def side=(side : Side)
+    @side = side
+  end
+
+  def side
+    @side
+  end
+
   def cleanup
     @mutex.synchronize do
       return if client.closed? && remote.closed?
@@ -124,6 +137,7 @@ class Transport
 
         break unless _last_alive = last_alive
         break if (Time.local - _last_alive) > alive_interval
+        break if received_size && exception
 
         next if exception.is_a? IO::TimeoutError
         break unless exception
@@ -149,6 +163,7 @@ class Transport
 
         break unless _last_alive = last_alive
         break if (Time.local - _last_alive) > alive_interval
+        break if uploaded_size && exception
 
         next if exception.is_a? IO::TimeoutError
         break unless exception
@@ -159,12 +174,30 @@ class Transport
     end
 
     loop do
-      _uploaded_size = uploaded_size
-      _received_size = received_size
+      status = ->do
+        case side
+        when Side::Client
+          uploaded_size || received_size
+        else
+          uploaded_size && received_size
+        end
+      end
 
-      if _uploaded_size && _received_size
-        callback.try &.call _uploaded_size, _received_size
-        break cleanup
+      if status.call
+        cleanup
+
+        loop do
+          _uploaded_size = uploaded_size
+          _received_size = received_size
+
+          if _uploaded_size && _received_size
+            break callback.try &.call _uploaded_size, _received_size
+          end
+
+          sleep 0.05_f32.seconds
+        end
+
+        break
       end
 
       if _heartbeat = heartbeat
