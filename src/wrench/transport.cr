@@ -90,40 +90,19 @@ class Transport
   end
 
   def cleanup
-    return if client.closed? && remote.closed?
+    @mutex.synchronize do
+      return if client.closed? && remote.closed?
 
-    remote.close rescue nil
-    client.close rescue nil
+      remote.close rescue nil
+      client.close rescue nil
 
-    client_tls.try &.free
-    remote_tls.try &.free
+      client_tls.try &.free
+      remote_tls.try &.free
+    end
   end
 
   def update_last_alive
     @mutex.synchronize { @lastAlive = Time.local }
-  end
-
-  def fatal_transfer_error?(exception : Exception?) : Bool
-    return false unless exception
-
-    case exception
-    when IO::Error
-      return true if "Closed stream" == exception.message
-      return true if "Error reading socket: Connection reset by peer" == exception.message
-    end
-
-    false
-  end
-
-  def fuzzy_closed_stream?(exception : Exception?, size : Int64?, cycle_times : Int64) : Bool
-    return true if exception.nil? && (size || 0_i64).zero? && maximum_closed_cycle_times <= cycle_times
-
-    is_size_zero = (size || 0_i64).zero?
-    is_maximum_cycle_times = maximum_closed_cycle_times <= cycle_times
-
-    return true if fatal_transfer_error?(exception) && is_size_zero && is_maximum_cycle_times
-
-    false
   end
 
   def perform
@@ -132,7 +111,6 @@ class Transport
     spawn do
       exception = nil
       count = 0_i64
-      cycle_times = 0_i64
 
       loop do
         size = begin
@@ -143,13 +121,13 @@ class Transport
         end
 
         size.try { |_size| count += _size }
-        cycle_times += 1_i64
 
         break unless _last_alive = last_alive
         break if (Time.local - _last_alive) > alive_interval
-        break if fuzzy_closed_stream? exception, size, cycle_times
 
-        sleep 0.05_f32.seconds
+        next if exception.is_a? IO::TimeoutError
+        break unless exception
+        sleep 0.05_f32.seconds if exception
       end
 
       self.uploaded_size = (count || 0_i64) + extra_uploaded_size
@@ -158,7 +136,6 @@ class Transport
     spawn do
       exception = nil
       count = 0_i64
-      cycle_times = 0_i64
 
       loop do
         size = begin
@@ -169,47 +146,35 @@ class Transport
         end
 
         size.try { |_size| count += _size }
-        cycle_times += 1_i64
 
         break unless _last_alive = last_alive
         break if (Time.local - _last_alive) > alive_interval
-        break if fuzzy_closed_stream? exception, size, cycle_times
 
-        sleep 0.05_f32.seconds
+        next if exception.is_a? IO::TimeoutError
+        break unless exception
+        sleep 0.05_f32.seconds if exception
       end
 
       self.received_size = (count || 0_i64) + extra_received_size
     end
 
-    spawn do
-      next unless _heartbeat = heartbeat
+    loop do
+      _uploaded_size = uploaded_size
+      _received_size = received_size
 
-      loop do
-        break if uploaded_size || received_size
+      if _uploaded_size && _received_size
+        callback.try &.call _uploaded_size, _received_size
+        break cleanup
+      end
 
-        _heartbeat.call rescue break
+      if _heartbeat = heartbeat
+        error = false
+        _heartbeat.call rescue error = true
+        break if error
+
         sleep heartbeat_interval.seconds
-      end
-    end
-
-    spawn do
-      loop do
-        break cleanup if uploaded_size || received_size
-
-        sleep 1_i32.seconds
-      end
-    end
-
-    spawn do
-      loop do
-        _uploaded_size = uploaded_size
-        _received_size = received_size
-
-        if _uploaded_size && _received_size
-          break callback.try &.call _uploaded_size, _received_size
-        end
-
-        sleep 1_i32.seconds
+      else
+        sleep 0.05_f32.seconds
       end
     end
   end
