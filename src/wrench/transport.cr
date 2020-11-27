@@ -173,41 +173,43 @@ class Transport
       self.received_size = (count || 0_i64) + extra_received_size
     end
 
-    loop do
-      status = ->do
-        case side
-        when Side::Client
-          uploaded_size || received_size
-        else
-          uploaded_size && received_size
+    spawn do
+      loop do
+        status = ->do
+          case side
+          when Side::Client
+            uploaded_size || received_size
+          else
+            uploaded_size && received_size
+          end
         end
-      end
 
-      if status.call
-        cleanup
+        if status.call
+          cleanup
 
-        loop do
-          _uploaded_size = uploaded_size
-          _received_size = received_size
+          loop do
+            _uploaded_size = uploaded_size
+            _received_size = received_size
 
-          if _uploaded_size && _received_size
-            break callback.try &.call _uploaded_size, _received_size
+            if _uploaded_size && _received_size
+              break callback.try &.call _uploaded_size, _received_size
+            end
+
+            sleep 0.05_f32.seconds
           end
 
-          sleep 0.05_f32.seconds
+          break
         end
 
-        break
-      end
+        if _heartbeat = heartbeat
+          error = false
+          _heartbeat.call rescue error = true
+          break if error
 
-      if _heartbeat = heartbeat
-        error = false
-        _heartbeat.call rescue error = true
-        break if error
-
-        sleep heartbeat_interval.seconds
-      else
-        sleep 0.05_f32.seconds
+          sleep heartbeat_interval.seconds
+        else
+          sleep 0.05_f32.seconds
+        end
       end
     end
   end
