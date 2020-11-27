@@ -138,10 +138,10 @@ class Transport
         break unless _last_alive = last_alive
         break if (Time.local - _last_alive) > alive_interval
         break if received_size && exception
+        break unless exception
 
         next if exception.is_a? IO::TimeoutError
-        break unless exception
-        sleep 0.05_f32.seconds if exception
+        break if exception.is_a? IO::Error
       end
 
       self.uploaded_size = (count || 0_i64) + extra_uploaded_size
@@ -164,10 +164,10 @@ class Transport
         break unless _last_alive = last_alive
         break if (Time.local - _last_alive) > alive_interval
         break if uploaded_size && exception
+        break unless exception
 
         next if exception.is_a? IO::TimeoutError
-        break unless exception
-        sleep 0.05_f32.seconds if exception
+        break if exception.is_a? IO::Error
       end
 
       self.received_size = (count || 0_i64) + extra_received_size
