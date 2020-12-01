@@ -140,10 +140,9 @@ class Transport
 
         break if received_size && exception
         break unless exception
-        next if exception.is_a? IO::TimeoutError
         break if exception.is_a? IO::Error
 
-        sleep 0.05_f32
+        sleep 0.05_f32.seconds
       end
 
       self.uploaded_size = (count || 0_i64) + extra_uploaded_size
@@ -168,10 +167,9 @@ class Transport
 
         break if uploaded_size && exception
         break unless exception
-        next if exception.is_a? IO::TimeoutError
         break if exception.is_a? IO::Error
 
-        sleep 0.05_f32
+        sleep 0.05_f32.seconds
       end
 
       self.received_size = (count || 0_i64) + extra_received_size
