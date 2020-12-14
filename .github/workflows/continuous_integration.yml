@@ -22,7 +22,7 @@ jobs:
     steps:
     - name: Actions - Use CheckOut@V2
       uses: actions/checkout@v2
-    - name: Install - Coffee Dependencies
+    - name: Install - Wrench Dependencies
       run: shards install
     - name: Test - Crystal Spec
       run: crystal spec --error-trace --stats --progress --no-debug
@@ -41,7 +41,7 @@ jobs:
       run: brew update
     - name: Install - Crystal Language
       run: brew install crystal
-    - name: Install - Coffee Dependencies
+    - name: Install - Wrench Dependencies
       run: shards install
     - name: Test - Crystal Spec
       run: crystal spec --error-trace --stats --progress --no-debug
