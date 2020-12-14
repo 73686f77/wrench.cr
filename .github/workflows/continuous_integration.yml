@@ -22,7 +22,7 @@ jobs:
     steps:
     - name: Actions - Use CheckOut@V2
       uses: actions/checkout@v2
-    - name: Install - Wrench Dependencies
+    - name: Install - Coffee Dependencies
       run: shards install
     - name: Test - Crystal Spec
       run: crystal spec --error-trace --stats --progress --no-debug
@@ -37,15 +37,11 @@ jobs:
     steps:
     - name: Actions - Use CheckOut@V2
       uses: actions/checkout@v2
-    - name: TemporaryFix - Brew Package Management
-      run: brew uninstall openssl@1.0.2t && brew uninstall python@2.7.17 && brew untap local/openssl && brew untap local/python2 && brew cask install xquartz
-    - name: Update - Brew Package Management
+    - name: Install - Brew Package Management
       run: brew update
-    - name: Upgrade - Brew Package Management
-      run: brew upgrade
     - name: Install - Crystal Language
       run: brew install crystal
-    - name: Install - Wrench Dependencies
+    - name: Install - Coffee Dependencies
       run: shards install
     - name: Test - Crystal Spec
       run: crystal spec --error-trace --stats --progress --no-debug
