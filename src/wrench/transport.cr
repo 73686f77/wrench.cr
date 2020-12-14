@@ -206,7 +206,7 @@ class Transport
         if _heartbeat = heartbeat
           error = false
           _heartbeat.call rescue error = true
-          break if error
+          next if error
 
           sleep heartbeat_interval.seconds
         else
