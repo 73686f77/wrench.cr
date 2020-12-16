@@ -1,3 +1,7 @@
+lib LibGC
+  # fun gc_invoke_finalizers = invoke_finalizers
+end
+
 class Transport
   enum Side : UInt8
     Client = 0_u8
@@ -14,12 +18,12 @@ class Transport
     @mutex = Mutex.new :unchecked
   end
 
-  def maximum_closed_cycle_times=(value : Int32)
-    @maximumClosedCycleTimes = value
+  def remote_tls_context=(value : OpenSSL::SSL::Context::Client)
+    @remoteTlsContext = value
   end
 
-  def maximum_closed_cycle_times
-    @maximumClosedCycleTimes || 10_i32
+  def remote_tls_context
+    @remoteTlsContext
   end
 
   def remote_tls=(value : OpenSSL::SSL::Socket::Client)
@@ -50,7 +54,7 @@ class Transport
     @uploadedSize = value
   end
 
-  private def uploaded_size
+  def uploaded_size
     @uploadedSize
   end
 
@@ -58,7 +62,7 @@ class Transport
     @receivedSize = value
   end
 
-  private def received_size
+  def received_size
     @receivedSize
   end
 
@@ -103,14 +107,15 @@ class Transport
   end
 
   def cleanup
-    @mutex.synchronize do
-      return if client.closed? && remote.closed?
-
+    unless remote.closed?
       remote.close rescue nil
-      client.close rescue nil
-
-      client_tls.try &.free
       remote_tls.try &.free
+      remote_tls_context.try &.free
+    end
+
+    unless client.closed?
+      client.close rescue nil
+      client_tls.try &.free
     end
   end
 
@@ -136,7 +141,7 @@ class Transport
         size.try { |_size| count += _size }
 
         break unless _last_alive = last_alive
-        break if (Time.local - _last_alive) > alive_interval
+        break if alive_interval <= (Time.local - _last_alive)
 
         break if received_size && exception
         break unless exception
@@ -163,7 +168,7 @@ class Transport
         size.try { |_size| count += _size }
 
         break unless _last_alive = last_alive
-        break if (Time.local - _last_alive) > alive_interval
+        break if alive_interval <= (Time.local - _last_alive)
 
         break if uploaded_size && exception
         break unless exception
@@ -187,8 +192,6 @@ class Transport
         end
 
         if status.call
-          cleanup
-
           loop do
             _uploaded_size = uploaded_size
             _received_size = received_size
