@@ -1,7 +1,3 @@
-lib LibGC
-  # fun gc_invoke_finalizers = invoke_finalizers
-end
-
 class Transport
   enum Side : UInt8
     Client = 0_u8
