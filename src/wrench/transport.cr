@@ -203,10 +203,7 @@ class Transport
         end
 
         if _heartbeat = heartbeat
-          error = false
-          _heartbeat.call rescue error = true
-          next if error
-
+          _heartbeat.call rescue nil
           sleep heartbeat_interval.seconds
         else
           sleep 0.05_f32.seconds
