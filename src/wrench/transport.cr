@@ -62,12 +62,12 @@ class Transport
     @receivedSize
   end
 
-  private def last_alive=(value : Time)
-    @lastAlive = value
+  private def latest_alive=(value : Time)
+    @latestAlive = value
   end
 
-  private def last_alive
-    @lastAlive
+  private def latest_alive
+    @latestAlive
   end
 
   def alive_interval=(value : Time::Span)
@@ -115,12 +115,12 @@ class Transport
     end
   end
 
-  def update_last_alive
-    @mutex.synchronize { @lastAlive = Time.local }
+  def update_latest_alive
+    @mutex.synchronize { @latestAlive = Time.local }
   end
 
   def perform
-    update_last_alive
+    update_latest_alive
 
     spawn do
       exception = nil
@@ -128,7 +128,7 @@ class Transport
 
       loop do
         size = begin
-          IO.super_copy(client, remote) { update_last_alive }
+          IO.super_copy(client, remote) { update_latest_alive }
         rescue ex : IO::CopyException
           exception = ex.cause
           ex.count
@@ -136,8 +136,8 @@ class Transport
 
         size.try { |_size| count += _size }
 
-        break unless _last_alive = last_alive
-        break if alive_interval <= (Time.local - _last_alive)
+        break unless _latest_alive = latest_alive
+        break if alive_interval <= (Time.local - _latest_alive)
 
         break if received_size && exception
         break unless exception
@@ -155,7 +155,7 @@ class Transport
 
       loop do
         size = begin
-          IO.super_copy(remote, client) { update_last_alive }
+          IO.super_copy(remote, client) { update_latest_alive }
         rescue ex : IO::CopyException
           exception = ex.cause
           ex.count
@@ -163,8 +163,8 @@ class Transport
 
         size.try { |_size| count += _size }
 
-        break unless _last_alive = last_alive
-        break if alive_interval <= (Time.local - _last_alive)
+        break unless _latest_alive = latest_alive
+        break if alive_interval <= (Time.local - _latest_alive)
 
         break if uploaded_size && exception
         break unless exception
