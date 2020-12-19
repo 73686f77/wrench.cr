@@ -30,6 +30,14 @@ class Transport
     @remoteTls
   end
 
+  def client_tls_context=(value : OpenSSL::SSL::Context::Server)
+    @clientTlsContext = value
+  end
+
+  def client_tls_context
+    @clientTlsContext
+  end
+
   def client_tls=(value : OpenSSL::SSL::Socket::Server)
     @clientTls = value
   end
@@ -112,6 +120,7 @@ class Transport
     unless client.closed?
       client.close rescue nil
       client_tls.try &.free
+      client_tls_context.try &.free
     end
   end
 
@@ -206,7 +215,7 @@ class Transport
           _heartbeat.call rescue nil
           sleep heartbeat_interval.seconds
         else
-          sleep 0.05_f32.seconds
+          sleep 0.25_f32.seconds
         end
       end
     end
