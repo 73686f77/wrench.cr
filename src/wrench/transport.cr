@@ -5,8 +5,10 @@ class Transport
   end
 
   enum Reliable : UInt8
-    Half = 0_u8
-    Full = 1_u8
+    Half   = 0_u8
+    Full   = 1_u8
+    Client = 2_u8
+    Remote = 3_u8
   end
 
   getter client : IO
@@ -15,10 +17,12 @@ class Transport
   getter heartbeat : Proc(Nil)?
   getter mutex : Mutex
   getter workerFibers : Array(Fiber)
+  property reliable : Reliable
 
   def initialize(@client, @remote : IO, @callback : Proc(Int64, Int64, Nil)? = nil, @heartbeat : Proc(Nil)? = nil)
     @mutex = Mutex.new :unchecked
     @workerFibers = [] of Fiber
+    @reliable = Reliable::Full
   end
 
   def remote_tls_context=(value : OpenSSL::SSL::Context::Client)
@@ -109,19 +113,26 @@ class Transport
     @extraReceivedSize || 0_i32
   end
 
-  def reliable=(reliable : Reliable)
-    @reliable = reliable
-  end
-
-  def reliable
-    @reliable
-  end
-
   def finished?
     dead_count = @mutex.synchronize { workerFibers.count { |fiber| fiber.dead? } }
     all_task_size = @mutex.synchronize { workerFibers.size }
 
     dead_count == all_task_size
+  end
+
+  def reliable_status(reliable : Reliable = self.reliable)
+    ->do
+      case reliable
+      in .half?
+        self.uploaded_size || self.received_size
+      in .full?
+        self.uploaded_size && self.received_size
+      in .client?
+        self.uploaded_size
+      in .remote?
+        self.received_size
+      end
+    end
   end
 
   def cleanup_all
@@ -241,27 +252,15 @@ class Transport
 
     mixed_fiber = spawn do
       loop do
-        status = ->do
-          case reliable
-          when Reliable::Half
-            uploaded_size || received_size
-          else
-            uploaded_size && received_size
-          end
-        end
+        _uploaded_size = uploaded_size
+        _received_size = received_size
 
-        if status.call
-          loop do
-            next sleep 0.05_f32.seconds unless _uploaded_size = uploaded_size
-            next sleep 0.05_f32.seconds unless _received_size = received_size
-
-            break callback.try &.call _uploaded_size, _received_size
-          end
-
-          break
+        if _uploaded_size && _received_size
+          break callback.try &.call _uploaded_size, _received_size
         end
 
         next sleep 0.25_f32.seconds unless heartbeat
+        next sleep 0.25_f32.seconds if uploaded_size || received_size
 
         heartbeat.try &.call rescue nil
         sleep heartbeat_interval.seconds
