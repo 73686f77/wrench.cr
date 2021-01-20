@@ -65,28 +65,28 @@ class Transport
     @heartbeatInterval ||= 10_i32.seconds
   end
 
-  private def uploaded_size=(value : Int64)
-    @uploadedSize = value
+  private def sented_size=(value : Int64)
+    @mutex.synchronize { @sentedSize = value }
   end
 
-  def uploaded_size
-    @uploadedSize
+  def sented_size
+    @mutex.synchronize { @sentedSize }
   end
 
   private def received_size=(value : Int64)
-    @receivedSize = value
+    @mutex.synchronize { @receivedSize = value }
   end
 
   def received_size
-    @receivedSize
+    @mutex.synchronize { @receivedSize }
   end
 
   private def latest_alive=(value : Time)
-    @latestAlive = value
+    @mutex.synchronize { @latestAlive = value }
   end
 
   private def latest_alive
-    @latestAlive
+    @mutex.synchronize { @latestAlive }
   end
 
   def alive_interval=(value : Time::Span)
@@ -97,11 +97,11 @@ class Transport
     @aliveInterval || 1_i32.minutes
   end
 
-  def extra_uploaded_size=(value : Int32 | Int64)
+  def extra_sented_size=(value : Int32 | Int64)
     @extraUploadedSize = value
   end
 
-  def extra_uploaded_size
+  def extra_sented_size
     @extraUploadedSize || 0_i32
   end
 
@@ -124,11 +124,11 @@ class Transport
     ->do
       case reliable
       in .half?
-        self.uploaded_size || self.received_size
+        self.sented_size || self.received_size
       in .full?
-        self.uploaded_size && self.received_size
+        self.sented_size && self.received_size
       in .client?
-        self.uploaded_size
+        self.sented_size
       in .remote?
         self.received_size
       end
@@ -190,7 +190,7 @@ class Transport
   end
 
   def update_latest_alive
-    @mutex.synchronize { @latestAlive = Time.local }
+    self.latest_alive = Time.local
   end
 
   def add_worker_fiber(fiber : Fiber)
@@ -200,7 +200,7 @@ class Transport
   def perform
     update_latest_alive
 
-    upload_fiber = spawn do
+    sent_fiber = spawn do
       exception = nil
       count = 0_i64
 
@@ -222,7 +222,7 @@ class Transport
         break
       end
 
-      self.uploaded_size = (count || 0_i64) + extra_uploaded_size
+      self.sented_size = (count || 0_i64) + extra_sented_size
     end
 
     receive_fiber = spawn do
@@ -242,7 +242,7 @@ class Transport
         break unless _latest_alive = latest_alive
         break if alive_interval <= (Time.local - _latest_alive)
 
-        break if uploaded_size && exception
+        break if sented_size && exception
         next sleep 0.05_f32.seconds if exception.is_a? IO::TimeoutError
         break
       end
@@ -252,22 +252,22 @@ class Transport
 
     mixed_fiber = spawn do
       loop do
-        _uploaded_size = uploaded_size
+        _sented_size = sented_size
         _received_size = received_size
 
-        if _uploaded_size && _received_size
-          break callback.try &.call _uploaded_size, _received_size
+        if _sented_size && _received_size
+          break callback.try &.call _sented_size, _received_size
         end
 
         next sleep 0.25_f32.seconds unless heartbeat
-        next sleep 0.25_f32.seconds if uploaded_size || received_size
+        next sleep 0.25_f32.seconds if sented_size || received_size
 
         heartbeat.try &.call rescue nil
         sleep heartbeat_interval.seconds
       end
     end
 
-    add_worker_fiber upload_fiber
+    add_worker_fiber sent_fiber
     add_worker_fiber receive_fiber
     add_worker_fiber mixed_fiber
   end
