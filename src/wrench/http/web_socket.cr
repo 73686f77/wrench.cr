@@ -57,7 +57,7 @@ class HTTP::WebSocket
           message = @current_message.gets_to_end
 
           @on_close.try &.call code, message
-          close code unless closed? if auto_process
+          close unless closed? if auto_process
 
           @current_message.clear
 

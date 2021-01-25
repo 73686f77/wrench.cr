@@ -35,6 +35,7 @@ class HTTP::Server
       tcp_server = TCPServer.new host, port, reuse_port: reuse_port
       read_timeout.try { |_read_timeout| tcp_server.client_read_timeout = _read_timeout }
       write_timeout.try { |_write_timeout| tcp_server.client_write_timeout = _write_timeout }
+
       server = OpenSSL::SSL::Server.new tcp_server, context
       server.start_immediately = false
 

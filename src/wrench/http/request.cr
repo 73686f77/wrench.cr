@@ -132,10 +132,10 @@ class HTTP::Request
 
   def to_io(io, without_body : Bool)
     io << @method << ' ' << resource << ' ' << @version << "\r\n"
-    cookies = @cookies
-    headers = cookies ? cookies.add_request_headers(@headers) : @headers
     return if without_body
 
+    cookies = @cookies
+    headers = cookies ? cookies.add_request_headers(@headers) : @headers
     HTTP.serialize_headers_and_body io, headers, nil, @body, @version
   end
 
