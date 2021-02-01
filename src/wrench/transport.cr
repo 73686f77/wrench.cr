@@ -1,60 +1,60 @@
 class Transport
   enum Side : UInt8
-    Client = 0_u8
-    Remote = 1_u8
+    Source      = 0_u8
+    Destination = 1_u8
   end
 
   enum Reliable : UInt8
-    Half   = 0_u8
-    Full   = 1_u8
-    Client = 2_u8
-    Remote = 3_u8
+    Half        = 0_u8
+    Full        = 1_u8
+    Source      = 2_u8
+    Destination = 3_u8
   end
 
-  getter client : IO
-  getter remote : IO
+  getter source : IO
+  getter destination : IO
   getter callback : Proc(Int64, Int64, Nil)?
   getter heartbeat : Proc(Nil)?
   getter mutex : Mutex
   getter workerFibers : Array(Fiber)
   property reliable : Reliable
 
-  def initialize(@client, @remote : IO, @callback : Proc(Int64, Int64, Nil)? = nil, @heartbeat : Proc(Nil)? = nil)
+  def initialize(@source : IO, @destination : IO, @callback : Proc(Int64, Int64, Nil)? = nil, @heartbeat : Proc(Nil)? = nil)
     @mutex = Mutex.new :unchecked
     @workerFibers = [] of Fiber
     @reliable = Reliable::Full
   end
 
-  def remote_tls_context=(value : OpenSSL::SSL::Context::Client)
-    @remoteTlsContext = value
+  def destination_tls_context=(value : OpenSSL::SSL::Context::Client)
+    @destinationTlsContext = value
   end
 
-  def remote_tls_context
-    @remoteTlsContext
+  def destination_tls_context
+    @destinationTlsContext
   end
 
-  def remote_tls=(value : OpenSSL::SSL::Socket::Client)
-    @remoteTls = value
+  def destination_tls_socket=(value : OpenSSL::SSL::Socket::Client)
+    @destinationTlsSocket = value
   end
 
-  def remote_tls
-    @remoteTls
+  def destination_tls_socket
+    @destinationTlsSocket
   end
 
-  def client_tls_context=(value : OpenSSL::SSL::Context::Server)
-    @clientTlsContext = value
+  def source_tls_context=(value : OpenSSL::SSL::Context::Server)
+    @sourceTlsContext = value
   end
 
-  def client_tls_context
-    @clientTlsContext
+  def source_tls_context
+    @sourceTlsContext
   end
 
-  def client_tls=(value : OpenSSL::SSL::Socket::Server)
-    @clientTls = value
+  def source_tls_socket=(value : OpenSSL::SSL::Socket::Server)
+    @sourceTlsSocket = value
   end
 
-  def client_tls
-    @clientTls
+  def source_tls_socket
+    @sourceTlsSocket
   end
 
   def heartbeat_interval=(value : Time::Span)
@@ -65,12 +65,12 @@ class Transport
     @heartbeatInterval ||= 10_i32.seconds
   end
 
-  private def sented_size=(value : Int64)
-    @mutex.synchronize { @sentedSize = value }
+  private def sent_size=(value : Int64)
+    @mutex.synchronize { @sentSize = value }
   end
 
-  def sented_size
-    @mutex.synchronize { @sentedSize }
+  def sent_size
+    @mutex.synchronize { @sentSize }
   end
 
   private def received_size=(value : Int64)
@@ -97,11 +97,11 @@ class Transport
     @aliveInterval || 1_i32.minutes
   end
 
-  def extra_sented_size=(value : Int32 | Int64)
+  def extra_sent_size=(value : Int32 | Int64)
     @extraUploadedSize = value
   end
 
-  def extra_sented_size
+  def extra_sent_size
     @extraUploadedSize || 0_i32
   end
 
@@ -124,27 +124,27 @@ class Transport
     ->do
       case reliable
       in .half?
-        self.sented_size || self.received_size
+        self.sent_size || self.received_size
       in .full?
-        self.sented_size && self.received_size
-      in .client?
-        self.sented_size
-      in .remote?
+        self.sent_size && self.received_size
+      in .source?
+        self.sent_size
+      in .destination?
         self.received_size
       end
     end
   end
 
   def cleanup_all
-    client.close rescue nil
-    remote.close rescue nil
+    source.close rescue nil
+    destination.close rescue nil
 
     loop do
       finished = self.finished?
 
       if finished
-        free_client_tls
-        free_remote_tls
+        free_source_tls
+        free_destination_tls
 
         break
       end
@@ -155,10 +155,10 @@ class Transport
 
   def cleanup_side(side : Side, free_tls : Bool)
     case side
-    in .client?
-      client.close rescue nil
-    in .remote?
-      remote.close rescue nil
+    in .source?
+      source.close rescue nil
+    in .destination?
+      destination.close rescue nil
     end
 
     loop do
@@ -166,10 +166,10 @@ class Transport
 
       if finished
         case side
-        in .client?
-          free_client_tls
-        in .remote?
-          free_remote_tls
+        in .source?
+          free_source_tls
+        in .destination?
+          free_destination_tls
         end
 
         break
@@ -179,14 +179,14 @@ class Transport
     end
   end
 
-  def free_client_tls
-    client_tls.try &.free
-    client_tls_context.try &.free
+  def free_source_tls
+    source_tls_socket.try &.free
+    source_tls_context.try &.free
   end
 
-  def free_remote_tls
-    remote_tls.try &.free
-    remote_tls_context.try &.free
+  def free_destination_tls
+    destination_tls_socket.try &.free
+    destination_tls_context.try &.free
   end
 
   def update_latest_alive
@@ -206,7 +206,7 @@ class Transport
 
       loop do
         size = begin
-          IO.super_copy(client, remote) { update_latest_alive }
+          IO.super_copy(source, destination) { update_latest_alive }
         rescue ex : IO::CopyException
           exception = ex.cause
           ex.count
@@ -222,7 +222,7 @@ class Transport
         break
       end
 
-      self.sented_size = (count || 0_i64) + extra_sented_size
+      self.sent_size = (count || 0_i64) + extra_sent_size
     end
 
     receive_fiber = spawn do
@@ -231,7 +231,7 @@ class Transport
 
       loop do
         size = begin
-          IO.super_copy(remote, client) { update_latest_alive }
+          IO.super_copy(destination, source) { update_latest_alive }
         rescue ex : IO::CopyException
           exception = ex.cause
           ex.count
@@ -242,7 +242,7 @@ class Transport
         break unless _latest_alive = latest_alive
         break if alive_interval <= (Time.local - _latest_alive)
 
-        break if sented_size && exception
+        break if sent_size && exception
         next sleep 0.05_f32.seconds if exception.is_a? IO::TimeoutError
         break
       end
@@ -252,15 +252,15 @@ class Transport
 
     mixed_fiber = spawn do
       loop do
-        _sented_size = sented_size
+        _sent_size = sent_size
         _received_size = received_size
 
-        if _sented_size && _received_size
-          break callback.try &.call _sented_size, _received_size
+        if _sent_size && _received_size
+          break callback.try &.call _sent_size, _received_size
         end
 
         next sleep 0.25_f32.seconds unless heartbeat
-        next sleep 0.25_f32.seconds if sented_size || received_size
+        next sleep 0.25_f32.seconds if sent_size || received_size
 
         heartbeat.try &.call rescue nil
         sleep heartbeat_interval.seconds
