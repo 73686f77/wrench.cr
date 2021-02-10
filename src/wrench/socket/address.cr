@@ -62,6 +62,11 @@ class Socket
 
     def self.ipv4_to_bytes(ip_address : Address) : Bytes?
       return unless ip_address.family.inet?
+      ipv4_to_bytes! ip_address rescue nil
+    end
+
+    def self.ipv4_to_bytes!(ip_address : Address) : Bytes
+      raise Exception.new "Address.ipv4_to_bytes!: IP address family is not INET!" unless ip_address.family.inet?
 
       pointer = ip_address.to_unsafe.as LibC::SockaddrIn*
       memory = IO::Memory.new 4_i32
@@ -73,11 +78,12 @@ class Socket
     end
 
     def self.ipv6_to_bytes(ip_address : Address) : Bytes?
+      return unless ip_address.family.inet6?
       ipv6_to_bytes! ip_address rescue nil
     end
 
-    def self.ipv6_to_bytes!(ip_address : Address) : Bytes?
-      return unless ip_address.family.inet6?
+    def self.ipv6_to_bytes!(ip_address : Address) : Bytes
+      raise Exception.new "Address.ipv6_to_bytes!: IP address family is not INET6!" unless ip_address.family.inet6?
 
       pointer = ip_address.to_unsafe.as LibC::SockaddrIn6*
       memory = IO::Memory.new 16_i32
